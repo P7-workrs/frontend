@@ -1,0 +1,84 @@
+﻿@using p7_client_frontendV2.Data
+@using System.Text;
+@using System.Text.Json;
+@using RabbitMQ.Client.Events;
+@using FluentFTP;
+@inject Client client
+<h1>Upload file</h1>
+
+<EditForm Model="@job">
+    <p>
+        <label>
+            Job Name: 
+            <InputText id="name" @bind-Value="job.JobName" />
+        </label>
+    </p>
+</EditForm>
+<InputFile OnChange="@SingleUpload" /><br/>
+<input class="btn" type="submit" value="Upload" onclick="@Upload"/>
+
+
+@code {
+    private Job job = new();
+    //string jobStatus = "";
+    byte[] bytes;
+    private ServiceTask task = new();
+
+    private async Task SingleUpload(InputFileChangeEventArgs e)
+    {
+        if (job.JobName != "" && job.JobName != null)
+        {
+
+            MemoryStream ms = new MemoryStream();
+            await e.File.OpenReadStream().CopyToAsync(ms);
+            bytes = ms.ToArray();
+            //SendJobs(job.JobName);
+            //do something with bytes
+
+        }
+
+    }
+
+    public async Task UploadToServer(byte[] bytes, string location )
+    {
+        string[] subStr = location.Split(":");
+        var ftpClient = new FtpClient(subStr[0], subStr[1],subStr[2]);
+
+        ftpClient.Connect();
+        ftpClient.UploadBytes(bytes, subStr[3]);
+        ftpClient.Disconnect();
+
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Thread.Sleep(1000);
+        client.AddConsumer("startNewTask", handleRecievedTask);
+        //SendJobs(job.JobName);
+        await InitJobs();
+    }
+
+    Task InitJobs()
+    {
+        return Task.CompletedTask;
+    }
+
+    void SendJobs(string jobName)
+    {
+        client.SendMessage(jobName, "type", "startNewTask");
+    }
+
+    async void handleRecievedTask(object? model, RabbitMQ.Client.Events.BasicDeliverEventArgs ea)
+    {
+        task = JsonSerializer.Deserialize<ServiceTask>(Encoding.UTF8.GetString(ea.Body.ToArray()));
+
+        await UploadToServer(bytes, task.SourcePath);
+
+    }
+
+    void Upload()
+    {
+        SendJobs(job.JobName);
+    }
+
+}

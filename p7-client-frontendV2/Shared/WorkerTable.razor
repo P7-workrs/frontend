@@ -1,0 +1,113 @@
+﻿@using p7_client_frontendV2.Data
+@using System.Text;
+@using System.Text.Json;
+@using RabbitMQ.Client.Events;
+@using FluentFTP;
+@using Microsoft.Win32;
+@inject Client client
+
+<h3>User: @client.GetClientId() </h3>
+
+@{
+    List<DummyWorkers> WorkerList = new List<DummyWorkers>();
+    WorkerList.Add(new DummyWorkers("42069","Tower of Hanoi", "Running"));
+    WorkerList.Add(new DummyWorkers("1337","LOTR Script", "Done"));
+    WorkerList.Add(new DummyWorkers("80085","Coding in Tokyo","Running"));
+    WorkerList.Add(new DummyWorkers("43","Calculate seconds in space",  "Queue"));
+    WorkerList.Add(new DummyWorkers("42", "Rave attack","Done"));
+    WorkerList.Add(new DummyWorkers("44","Help me autotune Jens", "Done"));
+}
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Job Name</th>
+            <th>Status</th>
+            <th hidden>ID</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+ <tbody>
+        @foreach (var job in @jobList)
+        {
+            <tr>
+                <td>@job.Name</td>
+                <td>@job.Status</td>
+                <td>@job.Id</td>
+                <td hidden>@job.ResultPath</td>
+                @if(job.Status < ServiceTaskStatus.Canceled)
+                {
+                    <button id="job.Id" @onclick="()=>{CancelJob(job.Id);}">Cancel</button>
+                }
+                else if(job.Status == ServiceTaskStatus.Completed)
+                {
+                    <button id=job.Id @onclick="()=>{DownloadResult(job.Id, job.Name, job.ResultPath);}">Download</button>
+                }
+            </tr>
+        }
+    </tbody>
+</table>
+
+
+@code {
+
+    private List<ServiceTask> jobList = new();
+    private bool consumerCreated = false;
+
+    string GetDownloadFolderPath()
+    {
+        return Registry.GetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders", "{374DE290-123F-4565-9164-39C4925E467B}", String.Empty).ToString();
+    }
+
+    void CancelJob(Guid iD)
+    {
+        string cancelJob = iD.ToString();
+        client.SendMessage(cancelJob, "type", "cancelServiceTask");
+        client.SendMessage("", "type", "getServiceTasks");
+    }
+
+    void DownloadResult(Guid iD, string jobName, string location)
+    {
+        string[] subStr = location.Split(":");
+        var ftpClient = new FtpClient(subStr[0],subStr[1],subStr[2]);
+
+        ftpClient.Connect();
+        ftpClient.DownloadDirectory(GetDownloadFolderPath(), subStr[3]);
+        ftpClient.Disconnect();
+    }
+    // "/4fb89f8e-eb3e-4aa4-a24c-2a08cec67f9e/83a7a788-70ee-4e74-9980-946363210c5b/result/"
+    protected override async Task OnInitializedAsync()
+    {
+        Thread.Sleep(1000);
+        if(!consumerCreated)
+        {
+            client.AddConsumer("getServiceTasks", handleRecievedTask);
+            consumerCreated = true;
+        }
+
+        GetJobs();
+        await InitJobs();
+    }
+
+    Task InitJobs()
+    {
+
+        return Task.CompletedTask;
+    }
+
+    void GetJobs()
+    {
+        client.SendMessage("", "type", "getServiceTasks");
+        Console.WriteLine("request");
+
+        //c.SendMessage("test");
+    }
+
+    void handleRecievedTask(object? model, RabbitMQ.Client.Events.BasicDeliverEventArgs ea)
+    {
+        jobList = JsonSerializer.Deserialize<List<ServiceTask>>(Encoding.UTF8.GetString(ea.Body.ToArray()));
+    }
+
+
+
+}

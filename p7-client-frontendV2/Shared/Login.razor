@@ -1,0 +1,56 @@
+@using Data
+@page "/"
+@inject Client client
+@inject NavigationManager navManager
+<PageTitle>Login</PageTitle>
+
+<h2>Login</h2>
+
+<p>Welcome. Please login.</p>
+
+<EditForm Model="@user" OnValidSubmit="@HandleValidSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <p>
+        <label>
+            Username:
+            <InputText id="name" @bind-Value="user.Name" />
+        </label>
+    </p>
+    <p>Hello @user.Name!</p>
+    <button type="submit" @onclick="@Toggle">Submit</button>
+</EditForm>
+
+<div hidden="@HideLabel">
+    <h2>Welcome!</h2>
+    <p>Hello @user.Name!</p>
+</div>
+
+@code {
+    private User user = new();
+
+    private void HandleValidSubmit()
+    {
+
+        navManager.NavigateTo("/userUi");
+        Console.WriteLine($"Hello {user.Name}!");
+    }
+
+    bool HideLabel = true;
+
+    private void Toggle()
+    {
+
+        client.Register(user.Name);
+
+        client.SendMessage(user.Name);
+
+        while(client.GetClientId() == string.Empty)
+        {
+            Thread.Sleep(100);
+        }
+
+            HideLabel = !HideLabel;
+    }
+}
