@@ -62,3 +62,86 @@ a, .btn-link {
     .blazor-error-boundary::after {
         content: "An error has occurred."
     }
+
+.workrsLogo{
+    text-align: center;
+    display: block;
+    height: inherit;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.logoContainer{
+    height: 10vh;
+}
+.spinner {
+    border: 5px solid silver;
+    border-top: 5px solid #1861ac;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 1500ms linear infinite;
+    top: 40%;
+    left: 55%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg)
+    }
+
+    100% {
+        transform: rotate(360deg)
+    }
+}
+
+.loginError {
+    margin: 0 60vw 10px 0;
+    padding: 0 10px 0 10px;
+    background: rgba(255, 0, 0, 0.2);
+    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2), 0 0 5px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-content: stretch;
+    margin-left: auto;
+    margin-right: auto;
+    width: 20%
+}
+
+.loginErrorContent {
+    color: darkred;
+    text-align: left;
+    cursor: default;
+}
+
+.loginErrorX{
+    color: darkred;
+    margin-left: auto;
+    cursor: pointer;
+}
+
+.loginCenter {
+    padding: 10px;
+    width: 20%;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+    margin-bottom: 20px;
+    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2), 0 0 5px rgba(0, 0, 0, 0.2);
+}
+
+.center {
+    margin-left: auto;
+    margin-right: auto;
+    text-align:center;
+}
+
+.uploadCenter {
+    padding: 10px;
+    width: 60%;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 20px;
+    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2), 0 0 5px rgba(0, 0, 0, 0.2);
+}

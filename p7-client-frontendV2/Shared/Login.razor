@@ -3,54 +3,64 @@
 @inject Client client
 @inject NavigationManager navManager
 <PageTitle>Login</PageTitle>
+<div hidden = "@HideFailed" class="loginError">
+        <div class="loginErrorContent"> User was not found </div>
+        <div class="loginErrorX" @onclick = "@HideError" >x</div>
+    </div>
+<div class="loginCenter">
+    <h2>Login</h2>
 
-<h2>Login</h2>
-
-<p>Welcome. Please login.</p>
-
-<EditForm Model="@user" OnValidSubmit="@HandleValidSubmit">
-    <DataAnnotationsValidator />
-    <ValidationSummary />
-
-    <p>
-        <label>
-            Username:
-            <InputText id="name" @bind-Value="user.Name" />
-        </label>
-    </p>
-    <p>Hello @user.Name!</p>
-    <button type="submit" @onclick="@Toggle">Submit</button>
-</EditForm>
-
-<div hidden="@HideLabel">
-    <h2>Welcome!</h2>
-    <p>Hello @user.Name!</p>
+    <p>Welcome. Please login.</p>
+    <EditForm Model="@user" OnValidSubmit="@HandleValidSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+        <p style="text-align: left">
+            <label>
+                Username:
+                <InputText style ="width: 100%" id="name" @bind-Value="user.Name" />
+            </label>
+        </p>
+        <button class="center" type="submit" @onclick="@submit" >Submit</button>
+    </EditForm>
 </div>
-
+<div hidden = "@HideLabel" class="spinner" />
 @code {
     private User user = new();
 
+    bool HideLabel = true;
+    bool HideFailed = true;
+
     private void HandleValidSubmit()
     {
+        client.Register(user.Name);
+        client.SendMessage(user.Name);
+        var t = DateTime.Now;
+        bool wait = true;
 
-        navManager.NavigateTo("/userUi");
-        Console.WriteLine($"Hello {user.Name}!");
+        while (wait)
+        {
+            if (client.GetClientId() != string.Empty)
+            {
+                wait = false;
+                navManager.NavigateTo("/userUi");
+            }
+            else if ((DateTime.Now - t).TotalSeconds > 5)
+            {
+                wait = false;
+                HideFailed = false;
+                HideLabel = true;
+            }
+        }
     }
 
-    bool HideLabel = true;
-
-    private void Toggle()
+    private void HideError()
     {
+        HideFailed = true;
+    }
 
-        client.Register(user.Name);
-
-        client.SendMessage(user.Name);
-
-        while(client.GetClientId() == string.Empty)
-        {
-            Thread.Sleep(100);
-        }
-
-            HideLabel = !HideLabel;
+    private void submit()
+    {
+        HideLabel = false;
+        HideFailed = true;
     }
 }

@@ -4,20 +4,19 @@
 @using RabbitMQ.Client.Events;
 @using FluentFTP;
 @inject Client client
-<h1>Upload file</h1>
-
-<EditForm Model="@job">
-    <p>
-        <label>
-            Job Name: 
-            <InputText id="name" @bind-Value="job.JobName" />
-        </label>
-    </p>
-</EditForm>
-<InputFile OnChange="@SingleUpload" /><br/>
-<input class="btn" type="submit" value="Upload" onclick="@Upload"/>
-
-
+<div class="uploadCenter">
+    <h1>Upload file</h1>
+        <EditForm Model="@job" style="display: flex; height: 30px">
+            <p>
+                <label>
+                    Job Name: 
+                    <InputText id="name" @bind-Value="job.JobName" />
+                </label>
+            </p>
+            <InputFile OnChange="@SingleUpload" /><br/>
+            <input type="submit" value="Upload" onclick="@Upload"/>
+        </EditForm>
+</div>
 @code {
     private Job job = new();
     //string jobStatus = "";
@@ -73,7 +72,6 @@
         task = JsonSerializer.Deserialize<ServiceTask>(Encoding.UTF8.GetString(ea.Body.ToArray()));
 
         await UploadToServer(bytes, task.SourcePath);
-
     }
 
     void Upload()

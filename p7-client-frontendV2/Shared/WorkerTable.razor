@@ -5,9 +5,6 @@
 @using FluentFTP;
 @using Microsoft.Win32;
 @inject Client client
-
-<h3>User: @client.GetClientId() </h3>
-
 @{
     List<DummyWorkers> WorkerList = new List<DummyWorkers>();
     WorkerList.Add(new DummyWorkers("42069","Tower of Hanoi", "Running"));
@@ -28,7 +25,7 @@
         </tr>
     </thead>
  <tbody>
-        @foreach (var job in @jobList)
+        @foreach (var job in _jobList)
         {
             <tr>
                 <td>@job.Name</td>
@@ -47,12 +44,26 @@
         }
     </tbody>
 </table>
+<div hidden = "@hideLabel" class="spinner" />
 
 
 @code {
-
-    private List<ServiceTask> jobList = new();
+    private System.Timers.Timer _timer;
+    private List<ServiceTask> _jobList = new();
     private bool consumerCreated = false;
+    private bool hideLabel = false;
+
+    protected override void OnInitialized()
+    {
+        _timer = new System.Timers.Timer(1000);
+
+        _timer.Elapsed += async (s, e) =>
+        {
+            GetJobs();
+            await InvokeAsync(StateHasChanged);
+        };
+        _timer.Enabled = true;
+    }
 
     string GetDownloadFolderPath()
     {
@@ -72,7 +83,7 @@
         var ftpClient = new FtpClient(subStr[0],subStr[1],subStr[2]);
 
         ftpClient.Connect();
-        ftpClient.DownloadDirectory(GetDownloadFolderPath(), subStr[3]);
+        ftpClient.DownloadDirectory(GetDownloadFolderPath(), subStr[3], existsMode: FtpLocalExists.Resume);
         ftpClient.Disconnect();
     }
     // "/4fb89f8e-eb3e-4aa4-a24c-2a08cec67f9e/83a7a788-70ee-4e74-9980-946363210c5b/result/"
@@ -84,14 +95,11 @@
             client.AddConsumer("getServiceTasks", handleRecievedTask);
             consumerCreated = true;
         }
-
-        GetJobs();
         await InitJobs();
     }
 
     Task InitJobs()
     {
-
         return Task.CompletedTask;
     }
 
@@ -102,12 +110,16 @@
 
         //c.SendMessage("test");
     }
-
     void handleRecievedTask(object? model, RabbitMQ.Client.Events.BasicDeliverEventArgs ea)
     {
-        jobList = JsonSerializer.Deserialize<List<ServiceTask>>(Encoding.UTF8.GetString(ea.Body.ToArray()));
+        _jobList = JsonSerializer.Deserialize<List<ServiceTask>>(Encoding.UTF8.GetString(ea.Body.ToArray()));
+        if (_jobList.Any())
+        {
+            hideLabel = true;
+        }
+        else
+        {
+            hideLabel = false;
+        }
     }
-
-
-
 }

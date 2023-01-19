@@ -18,6 +18,8 @@ namespace p7_client_frontendV2
         string _replyQueueName;
         string _correlationId;
         string _replyConsumerTag;
+        string _consumerTag = string.Empty;
+
         Dictionary<string, EventHandler<BasicDeliverEventArgs>> _subscribers = new Dictionary<string, EventHandler<BasicDeliverEventArgs>>();
 
         public Client()
@@ -101,7 +103,7 @@ namespace p7_client_frontendV2
             var consumer = new EventingBasicConsumer(_channel);
             consumer.Received += HandleMessage;
 
-            _channel.BasicConsume(queue: "Client_" + _clientId,
+            _consumerTag = _channel.BasicConsume(queue: "Client_" + _clientId,
                 true,
                 consumer: consumer,
                 consumerTag: _clientId);
@@ -152,5 +154,14 @@ namespace p7_client_frontendV2
             return _clientId;
         }
 
+        public void Clear()
+        {
+            if (_consumerTag != string.Empty)
+            {
+                _channel.BasicCancel(_consumerTag);
+                _consumerTag = string.Empty;
+            }
+            _clientId = string.Empty;
+        }
     }
 }
